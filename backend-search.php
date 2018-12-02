@@ -1,46 +1,47 @@
 <?php
-/* Attempt MySQL server connection. Assuming you are running MySQL
-server with default setting (user 'root' with no password) */
-$link = mysqli_connect("localhost", "root", "", "movies");
- 
-// Check connection
-if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+include ('config.php');
+$output = '';
+if(isset($_POST["query"]))
+{
+ $search = mysqli_real_escape_string($link, $_POST["query"]);
+ $query = "
+  SELECT * FROM Movies 
+  WHERE title LIKE '%".$search."%'
+  LIMIT 10
+ ";
 }
- 
-if(isset($_REQUEST["term"])){
-    // Prepare a select statement
-    $sql = "SELECT * FROM Movies WHERE title LIKE ?";
-    
-    if($stmt = mysqli_prepare($link, $sql)){
-        // Bind variables to the prepared statement as parameters
-        mysqli_stmt_bind_param($stmt, "s", $param_term);
-        
-        // Set parameters
-        $param_term = $_REQUEST["term"] . '%';
-        
-        // Attempt to execute the prepared statement
-        if(mysqli_stmt_execute($stmt)){
-            $result = mysqli_stmt_get_result($stmt);
-            
-            // Check number of rows in the result set
-            if(mysqli_num_rows($result) > 0){
-                // Fetch result rows as an associative array
-                while($row = mysqli_fetch_array($result, MYSQLI_ASSOC)){
-                    echo "<p>" . $row["title"] . "</p>";
-                }
-            } else{
-                echo "<p>No matches found</p>";
-            }
-        } else{
-            echo "ERROR: Could not able to execute $sql. " . mysqli_error($link);
-        }
-    }
-     
-    // Close statement
-    mysqli_stmt_close($stmt);
+else
+{
+ $query = "SELECT * FROM Movies";
 }
- 
-// close connection
-mysqli_close($link);
+$result = mysqli_query($link, $query) or die(mysqli_query($result));
+if(mysqli_num_rows($result) > 0) {
+ $output .= '
+  <div class="table-responsive">
+   <table class="table table bordered">
+    <tr>
+        <th>Title</th>
+        <th>Year</th>
+        <th>Runtime (mins)</th>
+        <th>Description</th>
+    </tr>
+ ';
+ while($row = mysqli_fetch_array($result))
+ {
+  $output .= '
+   <tr>
+        <td>'.$row["title"].'</td>
+        <td>'.$row["year"].'</td>
+        <td>'.$row["runtime"].'</td> 
+        <td>'.$row["description"].'</td>   
+   </tr>
+  ';
+ }
+ echo $output;
+}
+else
+{
+ echo 'Data Not Found';
+}
+
 ?>
